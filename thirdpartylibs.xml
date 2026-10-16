@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<libraries>
+  <library>
+    <location>thirdpartylibs/leaflet</location>
+    <name>Leaflet</name>
+    <description>JavaScript library for interactive maps</description>
+    <version>1.9.4</version>
+    <license>BSD-2-Clause</license>
+    <repositoryurl>https://github.com/Leaflet/Leaflet</repositoryurl>
+    <copyrights>
+      <copyright>2010-2023 Vladimir Agafonkin</copyright>
+      <copyright>2010-2011 CloudMade</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdpartylibs/playerjs</location>
+    <name>player.js</name>
+    <description>Provider-independent postMessage protocol for embedded video players</description>
+    <version>unknown</version>
+    <license>MIT</license>
+    <repositoryurl>https://github.com/embedly/player.js</repositoryurl>
+  </library>
+</libraries>
