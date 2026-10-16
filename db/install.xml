@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/railvieweradmin/db" VERSION="202610110013" COMMENT="XMLDB definition for local_railvieweradmin plugin">
+  <TABLES>
+
+    <TABLE NAME="railviewer_sections" COMMENT="Abschnitte mit Videodateien">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="videofileitemid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="File item ID for the uploaded video"/>
+        <FIELD NAME="s3_object_key" TYPE="char" LENGTH="1024" NOTNULL="false" COMMENT="Object key des Videos im S3-Bucket"/>
+        <FIELD NAME="vimeo_video_id" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Vimeo video ID, falls die Sektion ein Vimeo- statt eines hochgeladenen Videos verwendet"/>
+        <FIELD NAME="video_source" TYPE="char" LENGTH="20" NOTNULL="false" DEFAULT="upload" COMMENT="upload, vimeo, ignite oder sharepoint"/>
+        <FIELD NAME="ignite_video_id" TYPE="char" LENGTH="64" NOTNULL="false" COMMENT="Video-ID bei ignite.video (keine Zahl, daher char statt int)"/>
+        <FIELD NAME="sharepoint_drive_id" TYPE="char" LENGTH="128" NOTNULL="false" COMMENT="Microsoft-Graph driveId der Videodatei, nur bei video_source=sharepoint"/>
+        <FIELD NAME="sharepoint_item_id" TYPE="char" LENGTH="128" NOTNULL="false" COMMENT="Microsoft-Graph itemId der Videodatei, nur bei video_source=sharepoint"/>
+        <FIELD NAME="duration" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="location_type" TYPE="char" LENGTH="10" NOTNULL="false" COMMENT="edge, node oder leer (rein namensbasierter Bestandsabschnitt ohne Kartenbezug)"/>
+        <FIELD NAME="node_ril100" TYPE="char" LENGTH="20" NOTNULL="false" COMMENT="RIL100-Code der Betriebsstelle, nur bei location_type=node ('Ortskenntnis')"/>
+        <FIELD NAME="node_name" TYPE="char" LENGTH="255" NOTNULL="false" COMMENT="Klartextname der Betriebsstelle, denormalisiert aus den Geodaten"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="importkey" TYPE="char" LENGTH="100" NOTNULL="false" COMMENT="Optionaler Schluessel aus dem CSV-Import (stabile Referenz statt Name)"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_section_edges" COMMENT="Kanten des Schienennetz-Kartenmodells, die zusammen einen Abschnitt bilden (ein Video kann mehrere Kanten ueberspannen)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="edge_id" TYPE="char" LENGTH="64" NOTNULL="true" COMMENT="Schluessel aus dem Knoten-Kanten-Modell, z.B. 2650_KK_KDF"/>
+        <FIELD NAME="direction" TYPE="char" LENGTH="10" NOTNULL="true" COMMENT="hin oder rueck"/>
+        <FIELD NAME="von_ril100" TYPE="char" LENGTH="20" NOTNULL="false"/>
+        <FIELD NAME="bis_ril100" TYPE="char" LENGTH="20" NOTNULL="false"/>
+        <FIELD NAME="streckennummer" TYPE="char" LENGTH="20" NOTNULL="false"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="edge_direction_uq" UNIQUE="true" FIELDS="edge_id, direction"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_routes" COMMENT="Kombinierte Strecken aus Abschnitten">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="pairedrouteid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Verknuepfte Gegenrichtung (Hinfahrt/Rueckfahrt derselben physischen Strecke), NULL = unverknuepft"/>
+        <FIELD NAME="direction" TYPE="char" LENGTH="10" NOTNULL="false" COMMENT="hin/rueck, nur relevant wenn pairedrouteid gesetzt ist"/>
+        <FIELD NAME="importkey" TYPE="char" LENGTH="100" NOTNULL="false" COMMENT="Optionaler Schluessel aus dem CSV-Import (stabile Referenz statt Name)"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="pairedrouteid_fk" TYPE="foreign-unique" FIELDS="pairedrouteid" REFTABLE="railviewer_routes" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_route_sections" COMMENT="Zuordnung von Abschnitten zu Strecken">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="routeid_fk" TYPE="foreign" FIELDS="routeid" REFTABLE="railviewer_routes" REFFIELDS="id" ONDELETE="CASCADE"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_overlays" COMMENT="Overlays zu Streckenabschnitten">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="starttime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="endtime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="posx" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="posy" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="fontsize" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="fontcolor" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="backgroundcolor" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="bordercolor" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="markerposition" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="fixedboxwidth" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_stops" COMMENT="Eigenständige Stopp-Punkte je Abschnitt (pausieren die Wiedergabe an einer festen Zeit)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="name" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="stoptime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_ebulas" COMMENT="Hochgeladene EBuLa-Fahrpläne (Rohdaten als XML)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="xml" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="created_at" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_ebula_section" COMMENT="Einem Abschnitt zugeordneter (markierter) Ausschnitt eines EBuLa-Fahrplans">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="ebulaid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Referenziert railviewer_ebulas.id - aus welchem hochgeladenen Rohfahrplan dieser Ausschnitt stammt. NULL bei Zuweisungen, die vor Einfuehrung dieses Felds gespeichert wurden."/>
+        <FIELD NAME="html" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="json" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="created_at" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign-unique" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+        <KEY NAME="ebulaid_fk" TYPE="foreign" FIELDS="ebulaid" REFTABLE="railviewer_ebulas" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_ebula_section_map" COMMENT="Zuordnung von Video-Zeitpunkten zu einer Y-Position in der Ebula-Tabelle (gelbe Linie)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="videotime" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="line_top" TYPE="number" LENGTH="10" DECIMALS="2" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="is_static" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="sectionid_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+
+   <TABLE NAME="railviewer_assignments" COMMENT="Weist Usern Strecken zu mit Anzahl der Wiederholungen">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="required_views" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="completed_views" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="lastviewed" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="experiencetypeid" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Berufserfahrungstyp (nur bei aktivem Lernmethoden-Feature)"/>
+        <FIELD NAME="waived" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" COMMENT="1 = Strecke erlassen (z.B. Nutzer kennt sie schon), zaehlt als erfuellt"/>
+        <FIELD NAME="waivereason" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="waivedby" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="waivedtime" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="completedtime" TYPE="int" LENGTH="10" NOTNULL="false" COMMENT="Zeitpunkt, zu dem die Zuweisung (alle Methoden) erstmals vollstaendig erfuellt war; NULL = offen"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid_fk" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id" ONDELETE="CASCADE"/>
+        <KEY NAME="routeid_fk" TYPE="foreign" FIELDS="routeid" REFTABLE="railviewer_routes" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="railviewer_views" COMMENT="Tracking einzelner Wiedergaben">
+        <FIELDS>
+          <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+          <FIELD NAME="assignmentid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+          <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+          <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+          <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+          <FIELD NAME="playcountid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+          <FIELD NAME="position" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+          <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        </FIELDS>
+        <KEYS>
+          <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+          <KEY NAME="assignment_fk" TYPE="foreign" FIELDS="assignmentid" REFTABLE="railviewer_assignments" REFFIELDS="id" ONDELETE="CASCADE"/>
+          <KEY NAME="section_fk" TYPE="foreign" FIELDS="sectionid" REFTABLE="railviewer_sections" REFFIELDS="id" ONDELETE="CASCADE"/>
+        </KEYS>
+        <INDEXES>
+          <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid"/>
+          <INDEX NAME="playcountid_idx" UNIQUE="false" FIELDS="playcountid"/>
+        </INDEXES>
+      </TABLE>
+    <TABLE NAME="railviewer" COMMENT="Instanzen des Railviewer Moduls">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="course" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="intro" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="course_fk" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_einsatzstellen" COMMENT="Buendelt mehrere Strecken/Orte zu einer benannten Gruppe fuer die Zuweisung">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="importkey" TYPE="char" LENGTH="100" NOTNULL="false" COMMENT="Optionaler Schluessel aus dem CSV-Import (stabile Referenz statt Name)"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_einsatz_routes" COMMENT="Zuordnung Einsatzstelle zu Strecke (n:m)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="einsatzstelleid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="einsatzstelleid_fk" TYPE="foreign" FIELDS="einsatzstelleid" REFTABLE="railviewer_einsatzstellen" REFFIELDS="id" ONDELETE="CASCADE"/>
+        <KEY NAME="routeid_fk" TYPE="foreign" FIELDS="routeid" REFTABLE="railviewer_routes" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="einsatzstelle_route_uq" UNIQUE="true" FIELDS="einsatzstelleid, routeid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_methods" COMMENT="Lernmethoden (Selbstfahren, Mitfahren, ...)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="shortname" TYPE="char" LENGTH="50" NOTNULL="true"/>
+        <FIELD NAME="night" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="shortname_uq" UNIQUE="true" FIELDS="shortname"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_experience_types" COMMENT="Berufserfahrungstypen">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+
+    <TABLE NAME="railviewer_route_reqs" COMMENT="Anforderungsmatrix Strecke x Methode (0=Video) x Berufserfahrungstyp">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="methodid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="experiencetypeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="required_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="route_method_type_uq" UNIQUE="true" FIELDS="routeid, methodid, experiencetypeid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_assignment_req" COMMENT="Snapshot der geforderten Anzahl je Methode (0=Video) bei der Zuweisung">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignmentid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="methodid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="required_count" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="assignment_method_uq" UNIQUE="true" FIELDS="assignmentid, methodid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_rides" COMMENT="Erfasste Lernfahrten">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignmentid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="methodid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="ridedate" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="trainnumber" TYPE="char" LENGTH="30" NOTNULL="true"/>
+        <FIELD NAME="fromsectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="tosectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="trainerid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="isexternal" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="evu" TYPE="char" LENGTH="255" NOTNULL="false"/>
+        <FIELD NAME="trainername" TYPE="char" LENGTH="255" NOTNULL="false"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" DEFAULT="pending"/>
+        <FIELD NAME="rejectreason" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timeresponded" TYPE="int" LENGTH="10" NOTNULL="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="assignment_idx" UNIQUE="false" FIELDS="assignmentid"/>
+        <INDEX NAME="trainer_status_idx" UNIQUE="false" FIELDS="trainerid, status"/>
+        <INDEX NAME="user_idx" UNIQUE="false" FIELDS="userid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_ride_sections" COMMENT="Von einer Fahrt befahrene Abschnitte">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="rideid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="rideid_fk" TYPE="foreign" FIELDS="rideid" REFTABLE="railviewer_rides" REFFIELDS="id" ONDELETE="CASCADE"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="ride_section_uq" UNIQUE="true" FIELDS="rideid, sectionid"/>
+        <INDEX NAME="section_idx" UNIQUE="false" FIELDS="sectionid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_section_durations" COMMENT="Soll-Dauer in Minuten je Abschnitt und Methode (0=Video)">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sectionid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="methodid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="minutes" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="section_method_uq" UNIQUE="true" FIELDS="sectionid, methodid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_route_substs" COMMENT="Ersetzungsregeln zwischen Lernmethoden je Strecke">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="routeid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="methodid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="bymethodid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="factor" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="1"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="userchoice" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="route_subst_uq" UNIQUE="true" FIELDS="routeid, methodid, bymethodid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_assignment_subst" COMMENT="Entscheidung des Nutzers, eine Ersetzungsregel anzuwenden">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="assignmentid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="substid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="applied" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="assignment_subst_uq" UNIQUE="true" FIELDS="assignmentid, substid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_user_einsatz" COMMENT="Einem Nutzer zugewiesene Einsatzstellen">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="einsatzstelleid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="experiencetypeid" TYPE="int" LENGTH="10" NOTNULL="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="user_einsatz_uq" UNIQUE="true" FIELDS="userid, einsatzstelleid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_compliance_mail" COMMENT="Versandmarker fuer den automatischen Compliance-Bericht">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="timesent" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid_uq" UNIQUE="true" FIELDS="userid"/>
+      </INDEXES>
+    </TABLE>
+
+    <TABLE NAME="railviewer_declarations" COMMENT="Abschlusserklaerungen der Lernenden (bestaetigt/abgelehnt) mit Text-Snapshot">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true"/>
+        <FIELD NAME="status" TYPE="char" LENGTH="20" NOTNULL="true" COMMENT="accepted oder declined"/>
+        <FIELD NAME="declinereason" TYPE="text" NOTNULL="false"/>
+        <FIELD NAME="textsnapshot" TYPE="text" NOTNULL="true" COMMENT="Gerenderter Erklaerungstext zum Zeitpunkt der Antwort"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="userid_idx" UNIQUE="false" FIELDS="userid, timecreated"/>
+      </INDEXES>
+    </TABLE>
+
+  </TABLES>
+</XMLDB>
+

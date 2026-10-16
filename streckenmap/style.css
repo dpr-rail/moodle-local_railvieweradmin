@@ -1,0 +1,189 @@
+/**
+ * Streckenkarten-Widget: Layout für Admin- (streckenmap.php) und
+ * Nutzer-Kartenansicht (mod_railviewer/map.php). Basiert auf dem
+ * Prototyp-Stylesheet (streckenvideo-map-widget/src/style.css), ergänzt um
+ * responsive Breakpoints für Tablet-Breiten und die gruppierte Aufgabenliste.
+ */
+
+.railviewer-map-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  min-height: 480px;
+}
+
+.railviewer-map-canvas {
+  flex: 1 1 60%;
+  min-width: 280px;
+  height: 480px;
+  border: 1px solid #ddd;
+}
+
+.railviewer-map-sidebar {
+  flex: 0 0 320px;
+  box-sizing: border-box;
+  padding: 16px;
+  background: #f7f7f9;
+  border: 1px solid #ddd;
+  border-left: none;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+/* Auf schmaleren/Tablet-Breiten Karte und Panel untereinander statt
+   nebeneinander anzeigen, damit beide ausreichend Platz zur Bedienung
+   behalten (siehe Implementierungsplan, Touch-/Tablet-Tauglichkeit). */
+@media (max-width: 900px) {
+  .railviewer-map-layout {
+    flex-direction: column;
+  }
+  .railviewer-map-canvas {
+    height: 60vh;
+    min-height: 320px;
+  }
+  .railviewer-map-sidebar {
+    flex: 1 1 auto;
+    border-left: 1px solid #ddd;
+    border-top: none;
+    max-height: none;
+  }
+}
+
+.railviewer-map-sidebar h3 {
+  font-size: 16px;
+  margin: 0 0 4px 0;
+}
+
+.railviewer-map-sidebar p.hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 0;
+}
+
+.railviewer-map-legend {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+.railviewer-map-legend-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.railviewer-map-legend-swatch {
+  width: 22px;
+  height: 4px;
+  margin-right: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.railviewer-map-chain-info {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.railviewer-map-chain-info ol {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+}
+
+.railviewer-map-chain-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+/* Buttons mit ausreichender Trefferfläche für Touch-Bedienung. */
+.railviewer-map-sidebar .btn,
+.railviewer-map-tasklist-toggle {
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+/* -------------------------------------------------------------------
+ * Gruppierte Aufgabenliste (Nutzer-Ansicht), standardmäßig ausgeblendet.
+ * ------------------------------------------------------------------- */
+
+.railviewer-map-tasklist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 12px 0;
+}
+
+.railviewer-map-tasklist {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.railviewer-map-tasklist-group > summary {
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 600;
+  background: #f0f1f4;
+  border-bottom: 1px solid #ddd;
+  min-height: 24px;
+}
+
+.railviewer-map-tasklist-group:last-child > summary {
+  border-bottom: none;
+}
+
+.railviewer-map-tasklist-subgroup {
+  padding: 6px 14px 10px 14px;
+  border-top: 1px dashed #e2e2e2;
+}
+
+.railviewer-map-tasklist-subgroup h4 {
+  font-size: 13px;
+  margin: 6px 0 4px 0;
+  color: #444;
+}
+
+.railviewer-map-task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 4px;
+  font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.railviewer-map-task-item:last-child {
+  border-bottom: none;
+}
+
+.railviewer-map-task-item:hover,
+.railviewer-map-task-item:focus {
+  background: #f7f7f9;
+}
+
+.railviewer-map-task-status {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .railviewer-map-task-item {
+    flex-wrap: wrap;
+  }
+}

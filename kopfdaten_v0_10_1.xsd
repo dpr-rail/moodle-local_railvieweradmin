@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema vc:minVersion="1.1"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
+           xmlns:kd="http://db.de/buchfahrplan/kopfdaten/schemes/0.10"
+           targetNamespace="http://db.de/buchfahrplan/kopfdaten/schemes/0.10"
+           elementFormDefault="qualified"
+>
+    <xs:complexType name="kopfdaten">
+        <xs:annotation>
+            <xs:documentation>Maschinenlesbare Repräsentation der Eingabedaten für den in EBuLa dargestellten
+                Buchfahrplankopf
+            </xs:documentation>
+        </xs:annotation>
+
+        <xs:all>
+            <xs:element name="version">
+                <xs:annotation>
+                    <xs:documentation>Version des JSON-Schemas für die Schnittstelle GFD-Z-EBuLa, welches dem Datensatz zugrundeliegt; nicht zu verwechseln mit der Schema-Version der XSD für die Schnittstelle EBuLa-Kunde
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:pattern value="([0-9]|[1-9][0-9]*)\.([0-9]|[1-9][0-9]*)"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="zugnummer" type="kd:zugnummer"/>
+            <xs:element name="laufweg">
+                <xs:annotation>
+                    <xs:documentation>Umfasst den Laufweg in der Buchfahrplantabelle und des betreffenden (Gesamt)Fahrwegs
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="beginnBtrstBfplTabelle" type="kd:betriebsstelleName">
+							<xs:annotation>
+								<xs:documentation>Beginn/Start-Betriebsstelle der zugeordneten Buchfahrplantabelle
+							</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                        <xs:element name="endeBtrstBfplTabelle" type="kd:betriebsstelleName">
+							<xs:annotation>
+								<xs:documentation>Ende/Ziel-Betriebsstelle der zugeordneten Buchfahrplantabelle
+							</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                        <xs:element name="beginnBtrstTrasse" type="kd:betriebsstelleName">
+							<xs:annotation>
+								<xs:documentation>Beginn/Start-Betriebsstelle der Zugtrasse
+							</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                        <xs:element name="endeBtrstTrasse" type="kd:betriebsstelleName">
+							<xs:annotation>
+								<xs:documentation>Ende/Ziel-Betriebsstelle des Zugtrasse
+							</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="geltungszeit">
+                <xs:annotation>
+                    <xs:documentation>Umfasst die bestellte und effektive Geltungszeit der Fahrlage
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="bestellung" type="kd:datumsintervall">
+                            <xs:annotation>
+                                <xs:documentation>Bestellte Geltungszeit der Fahrlage</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element minOccurs="0" name="effektiv">
+                            <xs:annotation>
+                                <xs:documentation>Effektive Geltungszeit des Buchfahrplans als Liste von Datumsintervallen: ausgehend von der bestellten Geltungszeit der Fahrlage werden Geltungszeiten von überdeckenden Änderungsbestellungen, Wegfällen, ... herausgeschnitten
+                                </xs:documentation>
+                            </xs:annotation>
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element maxOccurs="186" name="effektiveGeltungszeit" type="kd:datumsintervall"/>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                        <xs:element minOccurs="0" name="hatNachtsprung" type="kd:nachtsprungangabe"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="zugcharakteristiken">
+				<xs:annotation>
+					<xs:documentation>Liste der für den Buchfahrplankopf relevanten Zugcharakteristiken</xs:documentation>
+				</xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" name="zugcharakteristik" type="kd:zugcharakteristik"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" name="betrieblicheRegelungen">
+				<xs:annotation>
+					<xs:documentation>Liste der für den Buchfahrplankopf relevanten betrieblichen Regelungen</xs:documentation>
+				</xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" name="betrieblicheRegelung" type="kd:betrieblicheRegelung"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="hgMax">
+                <xs:annotation>
+                    <xs:documentation>Umfasst Angaben zur Höchstgeschwindigkeit ggf. zusätzlich zur Abhängigkeit von Neigetechnik
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="normal" type="kd:geschwindigkeit">
+                            <xs:annotation>
+                                <xs:documentation>Ganzzahlige Höchstgeschwindigkeit (km/h) für einen Zug ohne Neigetechnik bzw. mit inaktiver Neigetechnik
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                        <xs:element minOccurs="0" name="neitec" type="kd:geschwindigkeit">
+                            <xs:annotation>
+                                <xs:documentation>Ganzzahlige Höchstgeschwindigkeit (km/h) für einen Zug mit aktiv genutzter Neigetechnik
+                                </xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" name="auswahlstringdaten">
+                <xs:annotation>
+                    <xs:documentation>Umfasst den nichtgeltungszeitindividuellen Auswahlstring zum Buchfahrplankopf sowie alle dem Buchfahrplankopf zugeordneten geltungszeitindividuellen Auswahlstrings
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="auswahlstring" type="kd:auswahlstring">
+                        </xs:element>
+                        <xs:element minOccurs="0" name="geltungszeitindividuelleAuswahlstrings">
+							<xs:annotation>
+								<xs:documentation>Umfasst die Dateninhalte des geltungszeitindividuellen Auswahlstrings wie effektive Geltungszeit, Laufweg, Zugdaten, Eingaben aus Veröffentlichungsaufträgen
+								</xs:documentation>
+							</xs:annotation>
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element maxOccurs="unbounded" name="geltungszeitindividuellerAuswahlstring" type="kd:geltungszeitindividuellerAuswahlstring">
+                                    </xs:element>
+                                </xs:sequence>
+                            </xs:complexType>
+                        </xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+    <xs:complexType name="verkehrszeit">
+        <xs:annotation>
+            <xs:documentation>Umfasst zur Beschreibung der zeitlichen Gültigkeit spezifischer Zugeigenschaften eine Liste der Datumsabschnitte, eine Liste der Einzeltage, eine textuelle Beschreibung, sowie einen Flag für vorhandene Nachtsprünge</xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="abschnitte">
+				<xs:annotation>
+					<xs:documentation>Liste der zusammenhängenden und überschneidungsfreien Intervalle der Verkehrszeit
+					</xs:documentation>
+				</xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="186" name="abschnitt" type="kd:datumsintervall"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="einzeltage">
+				<xs:annotation>
+					<xs:documentation>Liste der Einzeltage, aus denen sich die Verkehrszeit zusammensetzt
+					</xs:documentation>
+				</xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="371" name="einzeltag" type="xs:date"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="textuelleDarstellungVerkehrstage" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Beschreibung der Verkehrszeit wie im Buchfahrplankopf explizit angegeben: umfasst auch Angaben zum Verkehrstageschlüssel und Zusatz- und Ausfalltagen
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element minOccurs="0" name="hatNachtsprung" type="kd:nachtsprungangabe"/>
+        </xs:all>
+    </xs:complexType>
+    <xs:simpleType name="tfzAngaben">
+        <xs:annotation>
+            <xs:documentation>Textuelle Angabe der Liste der Baureihen der in der Bespannung verwendeten Triebfahrzeuge</xs:documentation>
+        </xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="400"/>
+		</xs:restriction>
+	</xs:simpleType>
+    <xs:complexType name="mbrAngaben">
+		<xs:annotation>
+			<xs:documentation>Unterscheidet die Bremsangaben zwischen nicht-vorhandener bzw. nicht aktiver Neigetechnik (normal) und aktiver Neigetechnik (neitec)</xs:documentation>
+		</xs:annotation>
+        <xs:all>
+            <xs:element name="normal">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="mbr" type="kd:mbr"/>
+                        <xs:element name="bremsstellung" type="kd:bremsstellung"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" name="neitec">
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="mbr" type="kd:mbr"/>
+                        <xs:element name="bremsstellung" type="kd:bremsstellung"/>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="zugcharakteristik">
+		<xs:annotation>
+			<xs:documentation>Fasst ausgewählte Zugeigenschaften zusammen
+			</xs:documentation>
+		</xs:annotation>
+        <xs:all>
+            <xs:element name="istBasis" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Kennzeichnet, ob die Zugcharakteristik eine Basis-Zugcharakteristik ist
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="beginnBtrst" type="kd:betriebsstelleName">
+                <xs:annotation>
+                    <xs:documentation>Erste Betriebsstelle am Fahrweg, mit der die Zugcharakteristik verknüpft ist
+                    </xs:documentation>
+                </xs:annotation>
+			</xs:element>
+            <xs:element name="verkehrszeit" type="kd:verkehrszeit"/>
+            <xs:element name="zuggattungProduktbezeichnung" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>Textuelle Produktbeschreibung der Zuggattung, z.B. ICE, RE, DGS, ...
+                    </xs:documentation>
+                </xs:annotation>
+			</xs:element>
+            <xs:element name="bespannung" type="kd:bespannung"/>
+            <xs:element minOccurs="0" name="zuglaenge">
+                <xs:annotation>
+                    <xs:documentation>Länge des Gesamtzuges (m), also die Länge der Lokomotive oder des Triebwagens,
+                        verlängert um die Wagenzuglänge (falls angegeben)
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="1"/>
+                        <xs:maxInclusive value="835"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element minOccurs="0" name="lastAngaben">
+                <xs:annotation>
+                    <xs:documentation>Enthält ausgewählte Last-Informationen des Zuges
+                    </xs:documentation>
+                </xs:annotation>
+                <xs:complexType>
+                    <xs:all>
+                        <xs:element name="last" type="xs:integer">
+							<xs:annotation>
+								<xs:documentation>Enthält ausgewählte Last-Informationen des Zuges
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                        <xs:element name="istGrenzlast" type="xs:boolean">
+							<xs:annotation>
+								<xs:documentation>Flag, welches anzeigt, ob die angegebene Wagenzuglast bereits das Maximum dessen ist, was mit der bestellten Bespannung (Triebfahrzeugen) gezogen werden kann",
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+                    </xs:all>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="mbrAngaben" type="kd:mbrAngaben"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="auswahlstringZugcharakteristik">
+        <xs:annotation>
+            <xs:documentation>Spezifische für den Auswahlstring relevante Zugeigenschaften
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element minOccurs="0" name="istBasis" type="xs:boolean">
+                <xs:annotation>
+                    <xs:documentation>Kennzeichnet, ob die Zugcharakteristik eine Basis- oder Alternativ-Zugcharakteristik ist
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element minOccurs="0" name="beginnBtrst" type="kd:betriebsstelleName">
+                <xs:annotation>
+                    <xs:documentation>Erste Betriebsstelle am Fahrweg, mit der die Zugcharakteristik verknüpft ist
+                    </xs:documentation>
+                </xs:annotation>
+			</xs:element>
+            <xs:element minOccurs="0" name="verkehrszeit" type="kd:verkehrszeit"/>
+            <xs:element minOccurs="0" name="tfzAngaben" type="kd:tfzAngaben">
+			                <xs:annotation>
+                    <xs:documentation>Liste der Baureihen der in der Bespannung verwendeten Triebfahrzeuge
+                    </xs:documentation>
+                </xs:annotation>
+			</xs:element>
+            <xs:element minOccurs="0" name="mbrAngaben" type="kd:mbrAngaben"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="betrieblicheRegelung">
+        <xs:annotation>
+            <xs:documentation>(Bau)Betriebliche Regelung, die ab der Abfahrt an der 'beginnBtrst' bis zur Ankunft an der
+                'endeBtrst' gilt.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element minOccurs="0" name="beginnBtrst" type="kd:betriebsstelleName"/>
+            <xs:element minOccurs="0" name="endeBtrst" type="kd:betriebsstelleName"/>
+
+            <xs:element name="beschreibung">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element minOccurs="0" name="verkehrszeit" type="kd:verkehrszeit"/>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="bespannung">
+        <xs:annotation>
+            <xs:documentation>Fasst ausgewählte Informationen zur Bespannung des Zuges zusammen
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="buchfahrplantext">
+				<xs:annotation>
+					<xs:documentation>Angaben zur Bespannung wie im Buchfahrplankopf
+					</xs:documentation>
+				</xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="triebfahrzeuge">
+				<xs:annotation>
+					<xs:documentation>Liste der Triebfahrzeuge der Bespannung
+					</xs:documentation>
+				</xs:annotation>
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" name="triebfahrzeug" type="kd:triebfahrzeug"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element minOccurs="0" name="anzahlMittelwagen">
+				<xs:annotation>
+					<xs:documentation>Summe der Anzahl der Mittelwagen aller Teilbespannungen
+					</xs:documentation>
+				</xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:integer">
+                        <xs:minInclusive value="0"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:complexType name="triebfahrzeug">
+        <xs:annotation>
+            <xs:documentation>Fasst ausgewählte Informationen eines Triebfahrzeuges zusammen
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="baureihe">
+				<xs:annotation>
+					<xs:documentation>Buchfahrplantext der Baureihe
+					</xs:documentation>
+				</xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                        <xs:maxLength value="40"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="baureihenVariante">
+				<xs:annotation>
+					<xs:documentation>Variante der Baureihe
+					</xs:documentation>
+				</xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                        <xs:maxLength value="2"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element minOccurs="0" name="istSchiebelok" type="xs:boolean">
+				<xs:annotation>
+					<xs:documentation>Flag, das angibt, ob das Triebfahrzeug als (ggf. ungekoppelte) Schiebelok gekennzeichnet ist
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+            <xs:element minOccurs="0" name="gangart">
+				<xs:annotation>
+					<xs:documentation>Ausgabetext für Schnellgang (SG) oder Langsamgang (LG)
+					</xs:documentation>
+				</xs:annotation>
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="SG"/>
+                        <xs:enumeration value="LG"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+	<xs:complexType name="auswahlstring">
+		<xs:annotation>
+			<xs:documentation>Umfasst die Dateninhalte des nichtgeltungszeitindividuellen Auswahlstrings
+			</xs:documentation>
+		</xs:annotation>
+		<xs:all>
+			<xs:element name="beginnBtrst" type="kd:betriebsstelleName">
+				<xs:annotation>
+					<xs:documentation>Erste Betriebsstelle der zum Buchfahrplankopf gehörenden Buchfahrplantabelle
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="endeBtrst" type="kd:betriebsstelleName">
+				<xs:annotation>
+					<xs:documentation>Letzte Betriebsstelle der zum Buchfahrplankopf gehörenden Buchfahrplantabelle
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="zugcharakteristiken">
+				<xs:annotation>
+					<xs:documentation>Liste der im Auswahlstring aufgeführten Zugcharakteristiken
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element maxOccurs="unbounded" name="zugcharakteristik"
+									type="kd:auswahlstringZugcharakteristik"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" name="bfplUmleitungInformation">
+				<xs:annotation>
+					<xs:documentation>Voranstellung zum nichtgeltungszeitindividuellen Auswahlstring bei Umleitungs- und Bautrassenbuchfahrplänen
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="bfplTyp">
+							<xs:annotation>
+								<xs:documentation>Gibt unabhängig vom 'Umleitungstyp' der Fahrlage (Bautrasse oder Umleitung) ein konstantes Präfix wieder
+								</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="U"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+							<xs:element minOccurs="0" name="umleitungsnr" type="kd:umleitungsnr"/>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+    <xs:complexType name="geltungszeitindividuellerAuswahlstring">
+		<xs:all>
+			<xs:element name="beginnBtrst" type="kd:betriebsstelleName">
+				<xs:annotation>
+					<xs:documentation>Erste Betriebsstelle der zum Buchfahrplankopf gehörenden Buchfahrplantabelle
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="endeBtrst" type="kd:betriebsstelleName">
+				<xs:annotation>
+					<xs:documentation>Letzte Betriebsstelle der zum Buchfahrplankopf gehörenden Buchfahrplantabelle
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element minOccurs="0" name="voeAuftragEingabe">
+				<xs:annotation>
+					<xs:documentation>Informationen von Fahrplan-Veröffentlichungsaufträgen aus Fremdsystemen (z.B. BDV) für GFD-Z
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:all>
+						<xs:element name="erstellungszeitpunkt" type="xs:dateTime">
+							<xs:annotation>
+								<xs:documentation>Erstellungszeitpunkt des
+									Veröffentlichungsauftrags im Quellsystem
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="auftragstypBeschreibung">
+							<xs:annotation>
+								<xs:documentation>Textuelle Beschreibung des Veröffentlichungsauftragstyps
+								</xs:documentation>
+							</xs:annotation>
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value=""/>
+									<xs:enumeration value="betriebl. Umleitung"/>
+									<xs:enumeration value="Doppelführung"/>
+									<xs:enumeration value="Ersatzzug"/>
+									<xs:enumeration value="Hilfszug"/>
+									<xs:enumeration value="Teilausfall"/>
+									<xs:enumeration value="verringerte Mbr"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:element>
+					</xs:all>
+				</xs:complexType>
+			</xs:element>
+			<xs:element minOccurs="0" name="zugcharakteristiken">
+				<xs:annotation>
+					<xs:documentation>Liste der im spezifischen geltungszeitindividuellen Auswahlstring aufgeführten Zugcharakteristiken
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:annotation>
+							<xs:documentation>Spezifische für geltungszeitindividuellen Auswahlstring relevante Zugeigenschaften
+							</xs:documentation>
+						</xs:annotation>
+						<xs:element maxOccurs="unbounded" name="zugcharakteristik"
+									type="kd:zugcharakteristik"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="effektiveGeltungszeit" type="kd:datumsintervall">
+				<xs:annotation>
+					<xs:documentation>in fachlicher Dokumentation benannt als
+						Buchfahrplanverkehrszeitabschnitt
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+	</xs:complexType>
+
+	<!-- general types -->
+    <xs:complexType name="datumsintervall">
+        <xs:annotation>
+            <xs:documentation>Intervall gegeben durch zwei Datumsangaben: [Beginn-Datum, Ende-Datum]</xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element minOccurs="2" maxOccurs="2" name="datum" type="xs:date"/>
+        </xs:sequence>
+    </xs:complexType>
+
+	<!-- simpleType specializations -->
+    <xs:simpleType name="nachtsprungangabe">
+        <xs:annotation>
+            <xs:documentation>Erstrecken sich die Fahrtzeiten der Buchfahrplantabelle über zwei Kalendertage, werden für
+                die Datumsangaben und die Verkehrszeitenschlüssel die jeweilige Nachtsprungdarstellung ausgegeben
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:boolean">
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="zugnummer">
+        <xs:annotation>
+            <xs:documentation>Alphanumerische Zugnummer</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="15"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="umleitungsnr">
+        <xs:annotation>
+            <xs:documentation>Nummer der Umleitung</xs:documentation>
+        </xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="1"/>
+			<xs:maxInclusive value="999999999999999"/>
+		</xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="mbr">
+        <xs:annotation>
+            <xs:documentation>Dimensionslose Angabe der für den Fahrplan berechneten Mindestbremshundertstel</xs:documentation>
+        </xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:minInclusive value="0"/>
+		</xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="betriebsstelleName">
+        <xs:annotation>
+            <xs:documentation>Name16 der Betriebsstelle</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:minLength value="2"/>
+            <xs:maxLength value="16"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <xs:simpleType name="bremsstellung">
+       <xs:annotation>
+            <xs:documentation>Bremsstellung des Zuges
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="G"/>
+            <xs:enumeration value="P"/>
+            <xs:enumeration value="P+Mg"/>
+            <xs:enumeration value="R/P"/>
+            <xs:enumeration value="R"/>
+            <xs:enumeration value="R+Mg"/>
+            <xs:enumeration value="R+WB"/>
+            <xs:enumeration value="WB"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="geschwindigkeit">
+        <xs:annotation>
+            <xs:documentation>Ganzzahlige Geschwindigkeit (km/h)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="400"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+
+</xs:schema>

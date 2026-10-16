@@ -1,0 +1,367 @@
+/* styles.css */
+/* Per DevTools-Inspektion bestätigte Ursache: die Video-Auswahl (addElement('static', ...) in
+ * section_form.php) landet in einer Spalte mit der Bootstrap-Klasse ".form-inline"
+ * (<div class="col-md-9 form-inline felement" ...><div class="form-control-static">...
+ * #vimeo-selector-container/#ignite-selector-container...</div></div>). ".form-inline" setzt
+ * "display: flex" - und Flex-Items schrumpfen standardmäßig auf ihre Inhaltsbreite (shrink-to-
+ * fit), statt die Zeile zu füllen; das ist für normale einzeilige "static"-Texte gedacht, nicht
+ * für große HTML-Blöcke wie unsere Videoliste. Die Klasse wird per JS gezielt nur auf das
+ * betroffene Flex-Item gesetzt (siehe section_form.php, add_javascript()) - bewusst kein
+ * CSS-:has(), das bei fehlender Browser-Unterstützung die GESAMTE Regel verwerfen würde statt
+ * nur diesen einen Selektor zu ignorieren. */
+.railviewer-video-picker-field {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Zweite Fundstelle desselben Effekts, eine Ebene tiefer: Bootstrap 4 definiert
+ * ".form-inline .form-group { display: flex; flex: 0 0 auto; ... }" als Nachfahren-Selektor -
+ * trifft also JEDES ".form-group"-Element irgendwo innerhalb einer ".form-inline"-Zeile, nicht
+ * nur direkte Kinder. Der Wrapper der Video-Auswahl selbst wurde ursprünglich (unnötig) als
+ * "form-group" ausgezeichnet und dadurch ebenfalls zum schrumpfenden Flex-Container - in
+ * section_form.php auf eine eigene Klasse umbenannt, um mit Bootstraps Selektor gar nicht erst
+ * zu kollidieren, statt den Effekt erneut wegzuforcieren. */
+.railviewer-video-selector-wrap {
+    margin-bottom: 1rem;
+}
+
+/* Responsives Karten-Raster statt einer einspaltigen Liste - füllt die verfügbare Breite mit
+ * mehreren Kacheln nebeneinander, statt bei jedem Eintrag viel Weißraum rechts zu verschenken.
+ * auto-fill + minmax passt die Spaltenzahl automatisch an die Fensterbreite an (mobil: 1
+ * Spalte, breiter Bildschirm: mehrere), ganz ohne feste Breakpoints. */
+.vimeo-video-grid {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
+    gap: 8px;
+    align-content: start;
+}
+
+.vimeo-video-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.vimeo-video-item:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.vimeo-video-item.selected {
+    background-color: #e7f3ff;
+    border-color: #007bff;
+    border-width: 2px;
+}
+
+.video-thumbnail {
+    margin: 0 0 8px 0;
+}
+
+.video-thumbnail img {
+    width: 100%;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.video-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.video-info h5 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.video-info p {
+    margin: 0 0 4px 0;
+    color: #666;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+}
+
+.video-info small {
+    color: #888;
+    font-size: 11px;
+}
+
+.video-actions {
+    margin-top: 8px;
+}
+
+.video-actions .btn {
+    width: 100%;
+}
+
+#selected-vimeo-video img {
+    border-radius: 4px;
+}
+
+.vimeo-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.vimeo-controls input {
+    flex: 1;
+}
+
+#vimeo-loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* assignments.php
+ *
+ * Diese Moodle-Instanz bündelt eine sehr frühe Bootstrap-4.0-Alpha (siehe
+ * theme/boost/scss/bootstrap/bootstrap.scss). Darin fehlen etliche der heute üblichen
+ * Utility-Klassen bzw. sie heißen anders als in aktuellen Bootstrap/Moodle-Docs:
+ *   - kein .d-flex, .justify-content-between, .align-items-center, .flex-wrap
+ *   - Abstands-Klassen heißen .m-t-3 / .m-r-2 / .p-a-0 statt .mt-3 / .mr-2 / .p-0
+ *   - .text-right/.text-center existieren nur mit Breakpoint-Präfix (.text-xs-right)
+ *   - .progress/.progress-bar zielen auf das native <progress>-Element, ein
+ *     div-basierter Balken bleibt damit unsichtbar
+ * Deshalb hier ausschließlich eigene, in sich geschlossene Klassen statt der
+ * "modernen" Bootstrap-Utilities, die es in dieser Version schlicht nicht gibt. */
+
+.railviewer-page-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.railviewer-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.railviewer-stat {
+    background: #f8f9fa;
+    border: 1px solid #e3e6e8;
+    border-radius: 8px;
+    padding: 10px 20px;
+    min-width: 120px;
+    text-align: center;
+}
+
+.railviewer-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.railviewer-stat-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.railviewer-stat-success .railviewer-stat-value {
+    color: #2e7d32;
+}
+
+.railviewer-stat-danger .railviewer-stat-value {
+    color: #c62828;
+}
+
+.railviewer-toolbar {
+    margin-bottom: 20px;
+}
+
+.railviewer-toolbar #railviewer-assignment-filter {
+    max-width: 320px;
+}
+
+.railviewer-assignment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.railviewer-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #f8f9fa;
+}
+
+.railviewer-card-header-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.railviewer-card-title {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.railviewer-card-body {
+    padding: 0;
+}
+
+.railviewer-assignment-table {
+    margin-bottom: 0;
+}
+
+.railviewer-assignment-table td,
+.railviewer-assignment-table th {
+    padding: 10px 12px;
+    vertical-align: middle;
+}
+
+.railviewer-col-center {
+    text-align: center;
+}
+
+.railviewer-col-right {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.railviewer-progress-track {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    height: 8px;
+    min-width: 120px;
+    overflow: hidden;
+}
+
+.railviewer-progress-bar {
+    height: 100%;
+    background-color: #17a2b8;
+}
+
+.railviewer-progress-bar.is-done {
+    background-color: #28a745;
+}
+
+.railviewer-progress-caption {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.railviewer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+/* Hin-/Rückfahrt-Paar in assignments.php: dezenter linker Akzentrand statt einer weiteren
+   Bootstrap-Utility-Annahme, markiert die beiden zusammengehörigen Zeilen visuell. */
+.railviewer-assignment-row-paired td:first-child {
+    border-left: 3px solid #6a3df5;
+}
+
+.railviewer-assignment-row-connector td {
+    font-size: 12px;
+    color: #666;
+    background: #f8f9fa;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    text-align: center;
+}
+
+/* index.php */
+.railviewer-admin-lead {
+    color: #555;
+    max-width: 60em;
+    margin-bottom: 24px;
+}
+
+.railviewer-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.railviewer-admin-tile {
+    display: block;
+    background: #fff;
+    border: 1px solid #e3e6e8;
+    border-radius: 10px;
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.railviewer-admin-tile:hover,
+.railviewer-admin-tile:focus {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .08);
+    border-color: #007bff;
+    color: inherit;
+    text-decoration: none;
+    transform: translateY(-2px);
+}
+
+.railviewer-admin-tile-icon {
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.railviewer-admin-tile-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.railviewer-admin-tile-desc {
+    font-size: 13px;
+    color: #666;
+}
+
+/* Umschalter "Video suchen" / "Video hochladen" im Vimeo-/ignite-Video-Auswahlfeld
+   (classes/forms/section_form.php). Eigenständige Klassen statt Bootstrap-4-Utilities, siehe
+   Hinweis oben in dieser Datei zur alten Bootstrap-4.0-Alpha dieser Moodle-Instanz. */
+.railviewer-video-mode-toggle {
+    display: inline-flex;
+    gap: 8px;
+}
+
+.railviewer-upload-progress {
+    height: 6px;
+    background: #e9ecef;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.railviewer-upload-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #007bff;
+    transition: width .2s ease;
+}

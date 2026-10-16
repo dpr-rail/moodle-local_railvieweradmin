@@ -1,0 +1,836 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema vc:minVersion="1.1"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning"
+           xmlns="http://db.de/buchfahrplan/schemes/1.2"
+           targetNamespace="http://db.de/buchfahrplan/schemes/1.2"
+           xmlns:kd="http://db.de/buchfahrplan/kopfdaten/schemes/0.10"
+           elementFormDefault="qualified">
+
+    <xs:import schemaLocation="kopfdaten_v0_10_1.xsd" namespace="http://db.de/buchfahrplan/kopfdaten/schemes/0.10"/>
+
+
+    <!-- EBuLa Buchfahrplan Austauschformat -->
+
+    <!-- BuchfahrplanContainer
+    Ein BuchfahrplanContainer kann einen oder mehrere Buchfahrplsene enthalten.
+    Alle Buchfahrplaene teilen die gleiche numerische Zugnummmer, aber nicht
+    notwendigerweise die alphanumerische Zugnummer.
+    -->
+    <xs:element name="BuchfahrplanContainer">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="Buchfahrplan"/>
+            </xs:sequence>
+            <xs:attribute name="numerischeZugnummer" use="required" type="xs:integer"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Buchfahrplan">
+        <xs:annotation>
+            <xs:documentation>Ein Buchfahrplan enthaelt die Daten fuer einen konkreten Zug
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="TrainID" type="CompositIdentifierOperationalType" minOccurs="0"/>
+                <xs:element name="PathID" type="CompositIdentifierOperationalType" minOccurs="0"/>
+                <xs:element ref="Geltungszeiten"/>
+                <xs:element ref="GeltungszeitAuswahlStrings" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Individuelle Geltungszeitspezifische Auswahlstrings
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="Kopfdaten" type="kd:kopfdaten" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>Maschinenlesbare Repräsentation der Eingabedaten für den in EBuLa dargestellten Buchfahrplankopf
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element ref="FormatierteZeilen"/>
+                <xs:element maxOccurs="unbounded" ref="BfplTabelle"/>
+            </xs:sequence>
+            <xs:attribute name="auswahlstring" use="required" type="xs:string"/>
+            <xs:attribute name="fahrplanart" type="Fahrplanart"/>
+            <xs:attribute name="fahrlagenbeschreibung" type="xs:string"/>
+            <xs:attribute name="AnfangBetriebsstelle" use="required" type="xs:string"/>
+            <xs:attribute name="EndeBetriebsstelle" use="required" type="xs:string"/>
+            <xs:attribute name="Besteller" use="required" type="xs:string"/>
+            <xs:attribute name="zugNr" use="required" type="zugnummer"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="FormatierteZeilen">
+        <xs:annotation>
+            <xs:documentation>FormatierteZeilen enthalten den Kopf, der aus Textzeilen und Spalten besteht
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="FormatierteZeile"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="FormatierteZeile">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="FormatierteSpalte"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="FormatierteSpalte">
+        <xs:complexType mixed="true">
+            <xs:attribute name="breite" use="required" type="xs:float"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="Wgs84koordinate" type="PositionType2D"/>
+
+    <xs:simpleType name="PositionType2D">
+        <xs:annotation>
+            <xs:documentation>
+                Two-dimensional position instances hold the longitude and latitude coordinates of a position in the 2D
+                WGS 84 coordinate reference system. The longitude value shall be listed first, followed by the latitude
+                value, both in decimal degrees. Latitude values shall range from -90 to +90 degrees, and longitude
+                values shall normally range from -180 to +180 degrees. For the longitude axis, special conditions apply
+                when the bounding box is continuous across the +/- 180 degrees meridian longitude value discontinuity:
+                a) If the bounding box is continuous clear around the Earth, then longitude values of minus and plus
+                infinity shall be used. b) If the bounding box is continuous across the value discontinuity but is not
+                continuous clear around the Earth, then some non-normal value can be used if specified for a specific
+                OWS use of the WGS84BoundingBoxType. For more information, see Subclauses 10.4.5 and C.13.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="PositionType">
+            <xs:length value="2"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PositionType">
+        <xs:annotation>
+            <xs:documentation>
+                Position instances hold the coordinates of a position in a coordinate reference system (CRS) referenced
+                by the related "crs" attribute or elsewhere. For an angular coordinate axis that is physically
+                continuous for multiple revolutions, but whose recorded values can be discontinuous, special conditions
+                apply when the bounding box is continuous across the value discontinuity: a) If the bounding box is
+                continuous clear around this angular axis, then ordinate values of minus and plus infinity shall be
+                used. b) If the bounding box is continuous across the value discontinuity but is not continuous clear
+                around this angular axis, then some non-normal value can be used if specified for a specific OWS use of
+                the BoundingBoxType. For more information, see Subclauses 10.2.5 and C.13.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:list itemType="xs:double"/>
+    </xs:simpleType>
+
+    <xs:element name="BfplTabelle">
+        <xs:annotation>
+            <xs:documentation>BfplTabelle enthaelt einen Fahrweg (Regelfahrweg oder Alternative) mit den befahrenen Streckenabschnitten
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexType>
+            <xs:sequence>
+                <!-- Auswahlstring -->
+                <xs:element ref="Fahrwegname"/>
+                <!--  -->
+                <xs:element name="Geschwindigkeitsstufen" minOccurs="0"
+                            type="Geschwindigkeitsstufenliste">
+                    <xs:annotation>
+                        <xs:documentation>Die Geschwindigkeitsstufen, die in dieser Tabelle dargestellt werden, falls die Tabelle einen
+                            100t-Zug beschreibt
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <!-- Streckenabschnitte -->
+                <xs:element maxOccurs="unbounded" ref="BfplStrecke"/>
+            </xs:sequence>
+            <!-- Alternative freistehend -->
+            <xs:attribute name="istBeginnFreistehend" type="xs:boolean" default="false"/>
+            <!-- Interne Id, innerhalb des XML Dokuments fuer Referenzen -->
+            <xs:attribute name="id" use="required" type="xs:integer"/>
+            <!-- neitec -->
+            <xs:attribute name="istNeitec" type="xs:boolean" default="false"/>
+            <!-- Nachtsprung hatZeitFuerMorgen=true -->
+            <xs:attribute name="hatZeitFuerMorgen" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>true falls der Fahrplan einen Nachtsprung enthält
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="hatZeitFuerHeute" type="xs:boolean" default="true">
+                <xs:annotation>
+                    <xs:documentation>true falls der Fahrplan am heutigen Tag fährt
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <!-- Regelweg | Alternative -->
+            <xs:attribute name="typeEntry" use="required" type="Fahrwegtyp"/>
+        </xs:complexType>
+    </xs:element>
+    <!-- Der Name des Fahrwegs (Bezeichnung für Regelweg, Auswahlstring für Alternative) -->
+    <xs:element name="Fahrwegname" type="xs:string"/>
+
+    <!-- BfplStrecke enthaelt KmGruppen, welche letztendlich BfplZeilen enthalten -->
+    <xs:element name="BfplStrecke">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="KmGruppe"/>
+            </xs:sequence>
+            <!-- Streckennummer der befahrenen Strecke -->
+            <xs:attribute name="strecke" use="required" type="xs:integer"/>
+        </xs:complexType>
+    </xs:element>
+    <!-- KmGruppe definiert Neigung und Radius an einem Kilometer, und enthaelt BfplZeilen -->
+    <xs:element name="KmGruppe">
+        <xs:complexType>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element ref="BfplZeile"/>
+                <xs:element ref="AusgedehnteAngabeWiederholer"/>
+                <xs:element ref="AusgedehnteAngabeEndeMarker"/>
+            </xs:choice>
+            <xs:attribute name="km" use="required" type="xs:decimal"/>
+            <xs:attribute name="kmUeberlaenge" type="xs:decimal"/>
+            <!-- Neigung wird nur bei Aenderungen der Neigung gesetzt -->
+            <xs:attribute name="neigung" type="xs:decimal"/>
+            <!-- Radius wird nur bei Aenderungen des Radius gesetzt -->
+            <xs:attribute name="radius" type="xs:decimal"/>
+            <!-- links, rechts, einzig oder beidegleise (gespiegelt) -->
+            <xs:attribute name="gleislage" type="gleislage"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="BfplZeile">
+        <xs:complexType mixed="true">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <!-- Betriebsstelle -->
+                <xs:element ref="Wgs84koordinate">
+                    <xs:annotation>
+                        <xs:documentation>WGS84 Koordinaten der Betriebsstelle
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <!-- allgemeine Eintraege -->
+                <xs:element ref="Mutterbahnhof"/>
+                <xs:element ref="Richtungsanzeiger"/>
+                <xs:element ref="ZusatzbemerkungSignal"/>
+                <!-- nur fuer typeEntry="Abzweigung" -->
+                <xs:element ref="Umleitungsverfahren"/>
+                <!-- nur fuer typeEntry="FPLEK" -->
+                <xs:element ref="Bespannung"/>
+                <xs:element ref="ZugCharakteristikAenderungstext"/>
+                <!-- nur fuer typeEntry="Betriebsstelle" -->
+                <xs:element ref="DS100Name"/>
+                <xs:element ref="Langname"/>
+                <!-- Betriebsstelle -->
+                <xs:element ref="Zusatzbemerkung"/>
+                <!-- BetrieblicherHinweis -->
+                <xs:element ref="Verkehrszeit"/>
+                <!-- Heizverbot -->
+                <xs:element ref="Bemerkung"/>
+                <!-- Oberstom -->
+                <xs:element ref="Bemerkung1"/>
+                <xs:element ref="Bemerkung2"/>
+                <xs:element ref="Bemerkung3"/>
+                <!-- Fahrtzeit -->
+                <xs:element ref="FussnoteFuerBesetzungszeit"/>
+            </xs:choice>
+
+            <!-- BfplZeile -->
+            <xs:attribute name="typeEntry" use="required" type="TypeEntry"/>
+            <xs:attribute name="vereinfacht" type="xs:boolean"/>
+            <xs:attribute name="kmReal" type="xs:decimal"/>
+            <xs:attribute name="kmRealUeberlaenge" type="xs:decimal"/>
+            <xs:attribute name="gleislage" use="required" type="gleislage"/>
+            <xs:attribute name="entfernungVomFahrweganfang" type="xs:decimal" default="0.0">
+                <xs:annotation>
+                    <xs:documentation>Entfernung vom Fahrweganfang in Km</xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="prioritaet" use="required" type="xs:integer">
+                <xs:annotation>
+                    <xs:documentation>Sortierpriorität (Reihenfolge) der Zeile innerhalb der gleichen KmGruppe für die Anzeige, kleinere Werte zuerst
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="id" type="xs:positiveInteger"/>
+            <!-- Saegelinie -->
+            <xs:attribute name="anzahl" type="xs:nonNegativeInteger" default="0"/>
+            <!-- Abzweigung -->
+            <xs:attribute name="Alternative" type="xs:string"/>
+            <xs:attribute name="AlternativeRef" type="xs:positiveInteger"/>
+            <xs:attribute name="istBeginnFreistehend" type="xs:boolean" default="false"/>
+            <!-- Ausgedehnte Angaben -->
+            <xs:attribute name="istAusgedehnt" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>Ob die Angabe ausgedehnt ist (Anfang und Ende hat)
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="istAnfang" type="xs:boolean"/>
+            <!-- Fortsetzung -->
+            <xs:attribute name="FortsetzungstabelleRef" type="xs:positiveInteger"/>
+            <xs:attribute name="FortsetzungszeileRef" type="xs:positiveInteger"/>
+            <!-- Bahnhofsgrenze -->
+            <xs:attribute name="istVerschoben" type="xs:boolean" default="false"/>
+            <!-- Betriebsstelle -->
+            <xs:attribute name="betriebsstellenArt" type="BetriebsstellenArt"/>
+            <xs:attribute name="ds100" type="xs:string"/>
+            <xs:attribute name="halteplatzEntfernungAbfahrend" type="xs:integer"/>
+            <xs:attribute name="halteplatzEntfernungAnkommend" type="xs:integer"/>
+            <xs:attribute name="istGleislageAbweichend" type="xs:boolean" default="false"/>
+            <xs:attribute name="istKonstruktionsgrenze" type="xs:boolean" default="false"/>
+            <xs:attribute name="istUeberZugfunkErreichbar" type="xs:boolean" default="false"/>
+            <xs:attribute name="grenzzeichenfreimeldung" type="xs:boolean" default="false"/>
+            <xs:attribute name="zugschlussmeldung" type="xs:boolean" default="false"/>
+            <xs:attribute name="haltmeldung" type="xs:boolean" default="false"/>
+            <!-- Fahrtzeit -->
+            <xs:attribute name="ankunftzeit" type="xs:time"/>
+            <xs:attribute name="abfahrtzeit" type="xs:time"/>
+            <xs:attribute name="haltArt" type="HaltArt"/>
+            <!-- Fahrtzeit und Fahrtzeit100t -->
+            <xs:attribute name="durchfahrtzeit" type="xs:time"/>
+            <xs:attribute name="besetzungszeichen" type="Besetzungszeichen"/>
+            <!-- Fahrtzeit100t -->
+            <xs:attribute name="geschwindigkeitsstufe" type="Geschwindigkeitsstufe"/>
+            <!-- Fahrwegpunkt -->
+            <xs:attribute name="art" type="Fahrwegpunktart"/>
+            <xs:attribute name="liegtImVerkuerztenBremsweg" type="xs:boolean" default="false"/>
+            <xs:attribute name="verkuerzterBremswegGiltFuerAlleGleise" type="xs:boolean"/>
+            <xs:attribute name="abweichenderStandortPfeil" type="StandOrt"/>
+            <xs:attribute name="giltNurFuer" type="xs:string"/>
+            <xs:attribute name="stehtImDurchgehendenHauptgleis" type="xs:boolean" default="true"/>
+            <xs:attribute name="ohneSignalisierungZs6Zs7" type="OhneSignalisierungZs6Zs7"/>
+            <xs:attribute name="signalBezeichnung" type="signalbezeichnung"/>
+            <xs:attribute name="hp2Geschwindigkeit" type="xs:nonNegativeInteger"/>
+            <xs:attribute name="istAlleinstehendesNe14" type="xs:boolean" default="false"/>
+            <xs:attribute name="hatEtcsLevelwechsel" type="xs:boolean" default="false"/>
+            <!-- Streckenfunk und Ortsfunk -->
+            <xs:attribute name="kanal" type="kanal"/>
+            <xs:attribute name="kanalNr" type="kanalNr"/>
+            <!-- Streckenfunk -->
+            <xs:attribute name="taste" type="FunkTaste"/>
+            <!-- Geschwindigkeit -->
+            <xs:attribute name="kmh" type="Geschwindigkeit"/>
+            <xs:attribute name="istFuerSpalte3a" type="xs:boolean" default="false"/>
+            <xs:attribute name="istNeitec" type="xs:boolean" default="false"/>
+            <xs:attribute name="istInversDarzustellen" type="xs:boolean" default="false"/>
+            <xs:attribute name="hatGestrichelteLinie" type="xs:boolean" default="false"/>
+            <xs:attribute name="hatNeitecUrsprung" type="xs:boolean" default="false"/>
+            <!-- Neigung -->
+            <xs:attribute name="neigung" type="xs:integer"/>
+            <!-- Radius -->
+            <xs:attribute name="radius" type="xs:nonNegativeInteger"/>
+            <!-- Tunnel -->
+            <xs:attribute name="tunnelTyp" type="TunnelTyp"/>
+            <xs:attribute name="verkehrszeit" type="xs:string"/>
+            <!-- FPLEK -->
+            <xs:attribute name="wagenzahl" type="xs:nonNegativeInteger"/>
+            <xs:attribute name="wagenzugLaenge" type="xs:nonNegativeInteger"/>
+            <xs:attribute name="wagenzugLast" type="xs:nonNegativeInteger"/>
+            <xs:attribute name="etcsFaehig" type="xs:boolean" default="false"/>
+            <xs:attribute name="esfZuggattung" type="ESFZuggattung"/>
+            <!-- ZfpHinweis -->
+            <xs:attribute name="istFuerSpalte4" type="xs:boolean"/>
+            <xs:attribute name="istFuerSpalte5" type="xs:boolean"/>
+            <xs:attribute name="lfdNr" type="xs:integer"/>
+            <xs:attribute name="hinweisbuchstabe" type="Hinweisbuchstabe"/>
+            <!-- Halthinweis -->
+            <!-- BetrieblicherHinweis -->
+            <xs:attribute name="istRangierweghinweisAufKonstruktionsgrenze" type="xs:boolean"/>
+            <xs:attribute name="wirdAuchOhneFahrtzeitAusgegeben" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>Ob der Hinweis auch ohne Fahrtzeit ausgegeben werden soll
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <!-- KmSprung -->
+            <xs:attribute name="istStreckenwechsel" type="xs:boolean"/>
+            <xs:attribute name="wirdUnterdrueckt" type="xs:boolean" default="false"/>
+            <xs:attribute name="ankommendeKilometrierung" type="xs:decimal"/>
+            <xs:attribute name="ueberlaenge" type="xs:decimal"/>
+            <xs:attribute name="veroeffentlichterKmSprungAnkommend" type="xs:decimal"/>
+            <xs:attribute name="veroeffentlichterKmSprungAnkommendUeberlaenge" type="xs:decimal"/>
+            <!-- Oberstrom -->
+            <xs:attribute name="Ampere" type="xs:nonNegativeInteger"/>
+            <!-- Stumpfgleiseinfahrt -->
+            <xs:attribute name="geschwindigkeitOhneZs3v" type="xs:nonNegativeInteger"/>
+        </xs:complexType>
+
+    </xs:element>
+    <xs:element name="TfzBaureiheVariante">
+        <xs:complexType>
+            <xs:attribute name="baureiheNr" use="required" type="xs:string"/>
+            <xs:attribute name="varianteNr" use="required" type="xs:positiveInteger"/>
+            <xs:attribute name="bespannungstyp" type="xs:string"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Bespannung">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="TfzBaureiheVariante" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Geltungszeiten">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="Geltungszeit"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="Geltungszeit">
+        <xs:complexType>
+            <xs:attribute name="bis" use="required" type="xs:date"/>
+            <xs:attribute name="von" use="required" type="xs:date"/>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="GeltungszeitAuswahlStrings">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" ref="GeltungszeitAuswahlString"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="GeltungszeitAuswahlString">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element type="NonEmptyText" name="GeltungszeitAuswahlText"/>
+                <xs:element ref="Geltungszeit"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="AusgedehnteAngabeWiederholer" type="IdList">
+        <xs:annotation>
+            <xs:documentation>Id Liste von ausgedehnten Angaben, die am aktuellen Km noch gelten</xs:documentation>
+            <xs:documentation>typeEntry in (Geschwindigkeit, Saegelinie, Tunnel, Bahnhofsgrenze, Heizverbot, Oberstrom,
+                Streckenfunk)
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:element name="AusgedehnteAngabeEndeMarker" type="IdList">
+        <xs:annotation>
+            <xs:documentation>Id Liste von ausgedehnten Angaben, die am aktuellen Km bei einem Ausbruch
+                (Fortsetzungszeile) zu beenden sind
+            </xs:documentation>
+            <xs:documentation>typeEntry in (Geschwindigkeit, Saegelinie, Tunnel, Bahnhofsgrenze, Heizverbot, Oberstrom,
+                Streckenfunk)
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+    <xs:simpleType name="IdList">
+        <xs:annotation>
+            <xs:documentation>
+                Liste von BfplZeile::id
+            </xs:documentation>
+        </xs:annotation>
+        <xs:list itemType="xs:positiveInteger"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="NonEmptyText">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:whiteSpace value="collapse"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Einfache Typen -->
+    <xs:element name="Symbol" type="xs:positiveInteger"/>
+    <xs:element name="Text" type="xs:string"/>
+    <xs:element name="Bespannungstyp" type="xs:NCName"/>
+    <xs:element name="DS100Name" type="xs:string"/>
+    <xs:element name="Mutterbahnhof" type="xs:string"/>
+    <xs:element name="Richtungsanzeiger" type="xs:string"/>
+    <xs:element name="ZugCharakteristikAenderungstext" type="xs:string"/>
+    <xs:element name="ZusatzbemerkungSignal" type="xs:string"/>
+    <xs:element name="Langname" type="xs:string"/>
+    <xs:element name="Bemerkung" type="xs:string"/>
+    <xs:element name="FussnoteFuerBesetzungszeit" type="xs:string">
+        <xs:annotation>
+            <xs:documentation>Falls das besetzungszeichen 'H' ist, dann stehen hier die Tage, in denen die Betriebsstell
+                durchfahren wird, aber nicht besetzt ist, falls solche Tage existieren
+            </xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:element name="Zusatzbemerkung" type="xs:string"/>
+    <xs:element name="Bemerkung1" type="xs:string"/>
+    <xs:element name="Bemerkung2" type="xs:string"/>
+    <xs:element name="Bemerkung3" type="xs:string"/>
+    <xs:element name="Umleitungsverfahren" type="xs:string"/>
+    <xs:element name="Verkehrszeit" type="xs:string"/>
+
+
+    <!-- Fahrplanart -->
+    <xs:simpleType name="Fahrplanart">
+        <xs:restriction base="xs:string">
+            <!--  Alleinstehender Stammbuchfahrplan -->
+            <xs:enumeration value="A"/>
+            <!--  Ergaenzungsbuchfahrplan -->
+            <xs:enumeration value="E"/>
+            <!--  Gesamtbuchfahrplan -->
+            <xs:enumeration value="G"/>
+            <!--  Stammbuchfahrplan -->
+            <xs:enumeration value="N"/>
+            <!--  Disposition -->
+            <xs:enumeration value="D"/>
+            <!--  Ersatzfahrpläne und alles andere -->
+            <xs:enumeration value="U"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <!-- Gleislage -->
+    <xs:simpleType name="gleislage">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="rechts"/>
+            <xs:enumeration value="links"/>
+            <xs:enumeration value="beidegleise"/>
+            <xs:enumeration value="einzig"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Zulaessige Typen -->
+    <xs:simpleType name="TypeEntry">
+        <xs:restriction base="xs:string">
+            <!-- Abzweigenden alternativen Fahrweg (Attribute "istBeginnFreistehend", "Alternative") -->
+            <xs:enumeration value="Abzweigung"/>
+            <!-- Bahnhofsgrenze (Attribut "istVerschoben") -->
+            <xs:enumeration value="Bahnhofsgrenze"/>
+            <!-- BetrieblicherHinweis (Attribute "verkehrszeit", "typ", "istFuerSpalte4", "istFuerSpalte5") -->
+            <xs:enumeration value="BetrieblicherHinweis"/>
+            <!-- Änderung des gleisbezogenen Betriebsnamens (Text) -->
+            <xs:enumeration value="Betriebsnamen"/>
+            <!-- Betriebsstelle (Attribute "typ", "ds100", "haltetafelAbfahrend", "haltetafelAnkommend", "abweichenderStandortPfeil", "erreichbarkeitZugfunk") -->
+            <xs:enumeration value="Betriebsstelle"/>
+            <!-- Betriebsstellennotiz (Text)-->
+            <xs:enumeration value="Betriebsstellennotiz"/>
+            <!-- Durchfahrthinweis (Text) -->
+            <xs:enumeration value="Durchfahrthinweis"/>
+            <!-- Fahrtzeit (Attribute "durchfahrt" [Sekunden], "ankunftzeit", "abfahrtzeit") -->
+            <xs:enumeration value="Fahrtzeit"/>
+            <!-- Fahrtzeit für Ersatzfahrpläne (Attribut "durchfahrt" [Sekunden]) -->
+            <xs:enumeration value="Fahrtzeit100t"/>
+            <!-- Fahrwegpunkt (Attribute "art", "signalBezeichnung", "hp2Geschwindigkeit", "OhneZS6", "OhneZS7", "VerkBremsweg", "AbweichenderStandortPfeil", "KlammernFuerSignale", "KlammerFuerVerkuerztenBremsweg") -->
+            <xs:enumeration value="Fahrwegpunkt"/>
+            <!-- Fortsetzung ist die letzte Zeile auf dem rechten oder einzigen Gleis in einer Alternative, falls und bevor diese einmündet (Attribute "FortsetzungszeileRef", "FortsetzungstabelleRef")-->
+            <xs:enumeration value="Fortsetzung"/>
+            <!-- FahrplanelementKombination (Attribute "wagenzugLast", "wagenzugLaenge", "esfZuggattung", "wagenzahl") -->
+            <xs:enumeration value="FPLEK"/>
+            <!-- Geschwindigkeit (Attribut "kmh") -->
+            <xs:enumeration value="Geschwindigkeit"/>
+            <!-- Geschwindigkeit für Ersatzfahrpläne (Attribut "kmh") -->
+            <xs:enumeration value="Geschwindigkeit100t"/>
+
+            <!-- Änderung des gleisbezogenen Betriebsnamens (Text) -->
+            <xs:enumeration value="GleisBetriebsname"/>
+            <!-- Halthinweis (Text) -->
+            <xs:enumeration value="Halthinweis"/>
+            <!-- HaltMitSicherungDurchZugpersonal (Text) -->
+            <xs:enumeration value="HaltMitSicherungDurchZugpersonal"/>
+            <!-- Heizverbot -->
+            <xs:enumeration value="Heizverbot"/>
+            <!-- Kilometrierungssprungzeile wird für jeden Kilometrierungssprung, jeden Streckenwechsel und jedes Kopfmachen pro befahrenem Gleis erzeugt (Attribute "ankommendeKilometrierung", "ueberlaenge", "wirdUnterdrueckt", "VeroeffentlichterKmSprungAnkommend", "VeroeffentlichterKmSprungAnkommendUeberlaenge" ) -->
+            <xs:enumeration value="KmSprung"/>
+            <!-- Die Neigung der Strecke in Fahrtrichtung des Zuges in Einheiten von 0,01 Promille -->
+            <xs:enumeration value="Neigung"/>
+            <!-- Ortsfunkmöglichkeit an einer durchfahrenenen Betriebsstelle (Attribute "kanal", "kanalNr")-->
+            <xs:enumeration value="Ortsfunk"/>
+            <!-- Oberstrombegrenzung (Attribut "Ampere") -->
+            <xs:enumeration value="Oberstrom"/>
+            <!-- Krümmung der Strecke (Attribut "radius") -->
+            <xs:enumeration value="Radius"/>
+            <!-- Anzahl der auszugebenden Saegelinien (Attribut "anzahl") -->
+            <xs:enumeration value="Saegelinie"/>
+            <!-- Änderung des gleisbezogenen Betriebsnamens (Text) -->
+            <xs:enumeration value="StreckenBetriebsnamen"/>
+            <!-- Anfang oder Ende einer Streckenfunkmöglichkeit (Attribute "istAnfang", "kanal", "kanalNr", "Hoerer_F_Taste", "Sprechwunschtaste")-->
+            <xs:enumeration value="Streckenfunk"/>
+            <!-- Höchstgeschwindigkeit unter Einbeziehung der  triebfahrzeugabhängigen Geschwindigkeiten für das bestellte Triebfahrzeug und der in den Zugdaten bestellten Hgmax des Zuges (Attribut "kmh")-->
+            <xs:enumeration value="Streckengeschwindigkeit"/>
+            <!-- Stumpfgleiseinfahrten -->
+            <xs:enumeration value="Stumpfgleiseinfahrt"/>
+            <!-- Tunnel (Attribut "TunnelTyp") -->
+            <xs:enumeration value="Tunnel"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- TunnelTyp -->
+    <xs:simpleType name="TunnelTyp">
+        <xs:restriction base="xs:string">
+            <!-- Anfang -->
+            <xs:enumeration value="TunnelA"/>
+            <!-- Mitte -->
+            <xs:enumeration value="TunnelM"/>
+            <!-- Ende -->
+            <xs:enumeration value="TunnelE"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- BetriebsstellenArt -->
+    <xs:simpleType name="BetriebsstellenArt">
+        <xs:restriction base="xs:string">
+            <!-- Anfang -->
+            <xs:enumeration value="Bf"/>
+            <!-- Mitte -->
+            <xs:enumeration value="Sbk"/>
+            <!-- Ende -->
+            <xs:enumeration value="sonstig"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <!-- Hinweisbuchstabe (Halthinweis) -->
+    <xs:simpleType name="Hinweisbuchstabe">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="A"/>
+            <xs:enumeration value="N"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- FunkTaste (Strckenfunk) -->
+    <xs:simpleType name="FunkTaste">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="hoererF"/>
+            <xs:enumeration value="sprechwunsch"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ESFZuggattung -->
+    <xs:simpleType name="ESFZuggattung">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="nahverkehr"/>
+            <xs:enumeration value="fernverkehr"/>
+            <xs:enumeration value="railion"/>
+            <xs:enumeration value="sonstige"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- StandOrt -->
+    <xs:simpleType name="StandOrt">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="rechts"/>
+            <xs:enumeration value="links"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Fahrwegtyp -->
+    <xs:simpleType name="Fahrwegtyp">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Regelweg"/>
+            <xs:enumeration value="Alternative"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- HaltArt -->
+    <xs:simpleType name="HaltArt">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="X"/>
+            <xs:enumeration value="+B"/>
+            <xs:enumeration value="+TM"/>
+            <xs:enumeration value="H"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Besetzungszeichen -->
+    <xs:simpleType name="Besetzungszeichen">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="U"/>
+            <xs:enumeration value="H"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- ohneSignalisierungZs6Zs7 -->
+    <xs:simpleType name="OhneSignalisierungZs6Zs7">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="ohneZs6"/>
+            <xs:enumeration value="ohneZs7"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Alphanumerische Zugnummer -->
+    <xs:simpleType name="zugnummer">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="12"/>
+            <xs:minLength value="1"/>
+            <xs:pattern value="[a-zA-Z0-9_\-]+"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Fahrwegpunktarten -->
+    <xs:simpleType name="Fahrwegpunktart">
+        <xs:union>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:maxLength value="10"/>
+                    <xs:minLength value="1"/>
+                    <xs:pattern value="([a-zA-Z0-9_]|[äöüßÄÖÜ])*"/>
+                </xs:restriction>
+            </xs:simpleType>
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="EL1/2"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:union>
+    </xs:simpleType>
+
+    <!-- Signalbezeichnung -->
+    <xs:simpleType name="signalbezeichnung">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="10"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Funk-Kanal -->
+    <xs:simpleType name="kanal">
+        <xs:restriction base="xs:string">
+            <xs:maxLength value="1"/>
+            <xs:pattern value="[A-Z]"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+
+    <!-- Funk-Kanal-Nummer -->
+    <xs:simpleType name="kanalNr">
+        <xs:restriction base="xs:integer">
+            <xs:minInclusive value="1"/>
+            <xs:maxInclusive value="99"/>
+            <xs:pattern value="\d{1,2}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- Geschwindigkeit -->
+    <xs:simpleType name="Geschwindigkeit">
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="995"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Geschwindigkeitsstufenliste">
+        <xs:list itemType="Geschwindigkeitsstufe"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="Geschwindigkeitsstufe">
+        <xs:restriction base="xs:nonNegativeInteger">
+            <xs:minInclusive value="5"/>
+            <xs:maxInclusive value="995"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <!-- TAF-TAB-TSI -->
+    <xs:complexType name="CompositIdentifierOperationalType">
+        <xs:annotation>
+            <xs:documentation>Used for unique identification of the objects handled in the messages such as train, path,
+                path request or case refernce.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence>
+            <xs:element ref="ObjectType"/>
+            <xs:element ref="Company"/>
+            <xs:element ref="Core"/>
+            <xs:element ref="Variant"/>
+            <xs:element ref="TimetableYear"/>
+            <xs:element ref="StartDate">
+                <xs:annotation>
+                    <xs:documentation>Is only used in the operational phase and refers to the date where the single
+                        train will start the train journey
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="ObjectType">
+        <xs:annotation>
+            <xs:documentation>Provides a possibility for differentiation between the objects: Train (TR), Route (RO),
+                Path (PA), Case Reference (CR), Path Request (PR) and TCR(TC)
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:minLength value="2"/>
+                <xs:maxLength value="2"/>
+                <xs:pattern value="[0-9A-Z]{2}"/>
+                <xs:enumeration value="TR"/>
+                <xs:enumeration value="RO"/>
+                <xs:enumeration value="PA"/>
+                <xs:enumeration value="CR"/>
+                <xs:enumeration value="PR"/>
+                <xs:enumeration value="TC"/>
+                <!-- Sector Schema TCR Part Begin -->
+                <!-- Sector Schema TCR Part End -->
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+    <xs:element name="Company" type="CompanyCode">
+        <xs:annotation>
+            <xs:documentation>Identifies a railway company (RU or IM)</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+    <xs:simpleType name="CompanyCode">
+        <xs:annotation>
+            <xs:documentation>Identifies the RU, IM or other company involved in the Rail Transport Chain
+            </xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="String4-4">
+            <xs:pattern value="[0-9A-Z]{4}"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="String4-4">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="4"/>
+            <xs:maxLength value="4"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="Core">
+        <xs:annotation>
+            <xs:documentation>It is the main part of identifier and is determent by the company that creates it.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:minLength value="12"/>
+                <xs:whiteSpace value="replace"/>
+                <xs:maxLength value="12"/>
+                <xs:pattern value="[\-*0-9A-Z]{12}"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+    <xs:element name="Variant">
+        <xs:annotation>
+            <xs:documentation>The variant shows a relationship between two identifiers referring to the same business
+                case
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:minLength value="2"/>
+                <xs:maxLength value="2"/>
+                <xs:pattern value="[0-9A-Z]{2}"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+    <xs:element name="TimetableYear">
+        <xs:annotation>
+            <xs:documentation>Refers to the timetable period in which the business will be carried out
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:integer">
+                <xs:minInclusive value="2012"/>
+                <xs:maxInclusive value="2097"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+
+    <xs:element name="StartDate" type="xs:date">
+        <xs:annotation>
+            <xs:documentation>The start of the date/time in effect</xs:documentation>
+        </xs:annotation>
+    </xs:element>
+
+</xs:schema>
